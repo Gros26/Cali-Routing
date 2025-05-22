@@ -1,0 +1,82 @@
+# Cali-Routing
+
+Un entorno Docker listo para trabajar con PostgreSQL 14 + PostGIS 3 + pgRouting y pgAdmin 4, precargado con la cartografía de Cali.
+
+## Estructura del repositorio
+
+├ initdb/  
+│ ├ buildings.sql      ← carga edificios  
+│ ├ landuse.sql        ← carga usos de suelo  
+│ ├ natural.sql        ← carga espacios naturales  
+│ ├ places.sql         ← carga entidades (barrios, barrios)  
+│ ├ points.sql         ← carga puntos de interés  
+│ ├ railways.sql       ← carga vías férreas  
+│ ├ roads.sql          ← carga red vial  
+│ └ waterways.sql      ← carga canales y ríos  
+├ Dockerfile           ← imagen base PostGIS + pgRouting  
+├ docker-compose.yml   ← define servicios (db + pgAdmin)  
+└ README.md            ← este documento  
+
+## Servicios
+
+- **postgis**  
+  - PostgreSQL 14 con PostGIS 3 y pgRouting  
+  - BD inicial: `cali`  
+  - Todos los `.sql` de `initdb/` se ejecutan al crear la BD
+
+- **pgadmin4**  
+  - Interfaz web para administrar tu BD  
+
+## Requisitos
+
+- Docker  
+- Docker Compose  
+
+## Inicio rápido
+
+1. Clona el repositorio  
+2. Desde la raíz del proyecto:
+   ```bash
+   docker-compose down -v  ← siempre que cierres el contenedor ejecuta este comando para despues iniciar el contenedor limpio
+   docker-compose up --build
+   ```
+3. Accede a pgAdmin en `http://localhost:5050`  
+   - Usuario: `admin@admin.com`  
+   - Contraseña: `admin`
+
+4. Registra un nuevo servidor para conectarte con el contenedor postgis
+
+
+
+
+
+5. Uso básico 
+
+-- Crea la tabla con source y target
+ALTER TABLE roads ADD COLUMN source INTEGER;
+ALTER TABLE roads ADD COLUMN target INTEGER;
+
+-- Crea la topología
+SELECT pgr_createTopology('roads', 0.0001, 'geom', 'gid');
+
+SELECT seq, node, edge, cost, agg_cost
+FROM pgr_dijkstra(
+  'SELECT gid AS id, source, target, ST_Length(geom) AS cost FROM roads',
+  991, 189, false
+) AS di
+JOIN roads AS r ON di.edge = r.gid;
+
+
+SELECT ST_AsGeoJSON(
+  ST_LineMerge(ST_Union(r.geom))
+)::json AS geojson
+FROM pgr_dijkstra(
+  'SELECT gid AS id, source, target, ST_Length(geom) AS cost FROM roads',
+  991, 189, false
+) AS di
+JOIN roads AS r ON di.edge = r.gid;
+
+Copia el JSON resultante y pégalo en tu visor favorito.
+
+
+
