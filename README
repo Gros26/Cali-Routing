@@ -46,18 +46,23 @@ Un entorno Docker listo para trabajar con PostgreSQL 14 + PostGIS 3 + pgRouting 
 
 4. Registra un nuevo servidor para conectarte con el contenedor postgis
 
-
-
+Host name/address :  postgis
+Port : 5432
+Maintenance database : psotgres
+Username : postgres 
+Password : postgres123
 
 
 5. Uso básico 
-
+ ------------------------ OBLIGATORIO -------------------------
 -- Crea la tabla con source y target
 ALTER TABLE roads ADD COLUMN source INTEGER;
 ALTER TABLE roads ADD COLUMN target INTEGER;
 
 -- Crea la topología
 SELECT pgr_createTopology('roads', 0.0001, 'geom', 'gid');
+
+-----------------------------------------------------------------
 
 SELECT seq, node, edge, cost, agg_cost
 FROM pgr_dijkstra(
